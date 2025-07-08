@@ -1,0 +1,38 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "./dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "removeComments": false,
+    "emitDeclarationOnly": false,
+    "module": "ESNext",
+    "target": "ES2022",
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "skipLibCheck": true,
+    "composite": false
+  },
+  "include": [
+    "app/**/*",
+    "components/**/*",
+    "hooks/**/*",
+    "lib/**/*",
+    "next.config.mjs",
+    "../../packages/ui/src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".next",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ]
+}
+

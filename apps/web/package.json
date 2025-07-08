@@ -5,7 +5,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
+    "build": "npm run build:ts && next build",
+    "clean": "rm -rf dist .next",
+    "clean:dist": "rm -rf dist",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
@@ -23,8 +25,8 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@workspace/eslint-config": "*",
-    "@workspace/typescript-config": "*",
+    "@workspace/config": "*",
     "typescript": "^5.7.3"
   }
 }
+

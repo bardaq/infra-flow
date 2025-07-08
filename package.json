@@ -8,13 +8,18 @@
   ],
   "scripts": {
     "build": "turbo build",
+    "build:ts": "turbo build:ts",
+    "clean": "turbo clean",
+    "clean:dist": "turbo clean:dist",
     "dev": "turbo dev",
     "lint": "turbo lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "web:dev": "npm run dev --workspace=web",
+    "web:build": "npm run build --workspace=web",
+    "web:build:ts": "npm run build:ts --workspace=web"
   },
   "devDependencies": {
-    "@workspace/eslint-config": "*",
-    "@workspace/typescript-config": "*",
+    "@workspace/config": "*",
     "prettier": "^3.5.1",
     "turbo": "^2.4.2",
     "typescript": "5.7.3"

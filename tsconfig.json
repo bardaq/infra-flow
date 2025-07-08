@@ -1,4 +1,12 @@
 {
-  "extends": "@workspace/typescript-config/base.json"
+  "files": [],
+  "references": [
+    {
+      "path": "./apps/web"
+    },
+    {
+      "path": "./packages/ui"
+    }
+  ]
 }
 
