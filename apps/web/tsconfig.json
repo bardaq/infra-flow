@@ -1,25 +1,23 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "@workspace/typescript-config/nextjs.json",
   "compilerOptions": {
-    "noEmit": false,
-    "allowImportingTsExtensions": false,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@workspace/ui/*": ["../../packages/ui/src/*"]
+    },
     "plugins": [
       {
         "name": "next"
       }
-    ],
-    "paths": {
-      "@/*": ["./src/*"],
-      "@infra-flow/ui": ["../../packages/ui/src"],
-      "@infra-flow/shared": ["../../packages/shared/src"],
-      "@infra-flow/config": ["../../packages/config/src"]
-    }
+    ]
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"],
-  "references": [
-    { "path": "../../packages/ui" },
-    { "path": "../../packages/shared" },
-    { "path": "../../packages/config" }
-  ]
+  "include": [
+    "next-env.d.ts",
+    "next.config.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
 }
