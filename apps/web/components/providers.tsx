@@ -1,9 +1,14 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { ThemeProvider as NextThemesProvider } from "next-themes"
+import { type ReactNode } from "react";
+import { ThemeProvider as NextThemesProvider } from "next-themes";
+import { TRPCReactProvider } from "@/lib/trpc/API.client";
 
-export function Providers({ children }: { children: React.ReactNode }) {
+interface ProvidersProps {
+  children: ReactNode;
+}
+
+export function Providers({ children }: ProvidersProps) {
   return (
     <NextThemesProvider
       attribute="class"
@@ -12,7 +17,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
       disableTransitionOnChange
       enableColorScheme
     >
-      {children}
+      <TRPCReactProvider>{children}</TRPCReactProvider>
     </NextThemesProvider>
-  )
+  );
 }
+

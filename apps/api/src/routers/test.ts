@@ -6,10 +6,10 @@ export const testRouter = router({
     return { version: "0.42.0" };
   }),
   hello: publicProcedure
-    .input(z.object({ username: z.string().nullish() }).nullish())
+    .input(z.object({ echo: z.string().nullish() }).nullish())
     .query(({ input, ctx }) => {
       return {
-        text: `hello ${input?.username ?? ctx.user?.name ?? "world"}`,
+        text: `hello world ${input?.echo || "world"}`,
       };
     }),
 });

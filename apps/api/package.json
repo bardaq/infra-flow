@@ -12,6 +12,7 @@
   "dependencies": {
     "@fastify/websocket": "^11.0.0",
     "@trpc/client": "npm:@trpc/client",
+    "@trpc/react-query": "^11.4.3",
     "@trpc/server": "npm:@trpc/server",
     "fastify": "^5.0.0",
     "superjson": "^1.12.4",
