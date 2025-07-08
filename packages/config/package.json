@@ -13,7 +13,9 @@
     "./eslint/react-internal": "./eslint/react-internal.js",
     "./typescript/base.json": "./typescript/tsconfig.base.json",
     "./typescript/nextjs.json": "./typescript/tsconfig.nextjs.json",
-    "./typescript/react-library.json": "./typescript/react-library.json"
+    "./typescript/react-library.json": "./typescript/react-library.json",
+    "./typescript/node.json": "./typescript/tsconfig.node.json",
+    "./api.config": "./api.config.ts"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "^15.1.7",
@@ -30,3 +32,4 @@
     "typescript-eslint": "^8.24.1"
   }
 }
+
