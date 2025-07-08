@@ -1,0 +1,43 @@
+{
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM", "ES2021"],
+    "module": "esnext",
+    "target": "es2020",
+    "moduleResolution": "node",
+    "moduleDetection": "force",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "strict": true,
+    "downlevelIteration": true,
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowJs": true,
+    "types": ["node"],
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "incremental": true,
+    "composite": true,
+    "baseUrl": ".",
+    "paths": {
+      "@infra-flow/api": ["./apps/api/src"],
+      "@infra-flow/web": ["./apps/web/src"],
+      "@infra-flow/ui": ["./packages/ui/src"],
+      "@infra-flow/shared": ["./packages/shared/src"],
+      "@infra-flow/config": ["./packages/config/src"]
+    }
+  },
+  "references": [
+    { "path": "./apps/api" },
+    { "path": "./apps/web" },
+    { "path": "./packages/ui" },
+    { "path": "./packages/shared" },
+    { "path": "./packages/config" }
+  ],
+  "exclude": ["node_modules", "dist", ".next"]
+}
+

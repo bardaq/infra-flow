@@ -1,0 +1,17 @@
+node_modules/
+**/node_modules/
+.DS_Store
+
+
+tsconfig.tsbuildinfo
+**/tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+**/.next
+
+dist/
+**/dist/
+build/
+**/build/
+
+.env
