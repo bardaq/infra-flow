@@ -10,6 +10,7 @@
   "scripts": {
     "web:dev": "npm run dev --workspace=web",
     "api:dev": "npm run dev --workspace=api",
+    "dcr": "./scripts/docker-compose.sh",
     "dev": "./scripts/docker-compose.sh dev",
     "logs": "./scripts/docker-compose.sh logs",
     "logs:api": "./scripts/docker-compose.sh logs api",
@@ -29,3 +30,4 @@
     "node": ">=20"
   }
 }
+

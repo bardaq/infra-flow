@@ -2,6 +2,10 @@
   "name": "@infra-flow/api",
   "private": true,
   "type": "module",
+  "exports": {
+    "./rootRouter": "./src/rootRouter.ts",
+    "./trpc": "./src/trpc.ts"
+  },
   "scripts": {
     "build": "esbuild src/server.ts --bundle --packages=external --platform=node --format=esm --outdir=dist --sourcemap",
     "build:docker": "tsc",

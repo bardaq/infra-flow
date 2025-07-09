@@ -44,7 +44,7 @@ services:
       NEXT_PUBLIC_API_URL: http://localhost:2022
       NEXT_PUBLIC_TRPC_URL: http://localhost:2022/trpc
     volumes:
-      - ../../../apps/web:/app/apps/web:ro
+      - ../../../apps/web:/app/apps/web
       - ../../../packages/ui/src:/app/packages/ui/src:ro
     depends_on:
       - api
