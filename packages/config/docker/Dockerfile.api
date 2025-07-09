@@ -1,0 +1,103 @@
+# Multi-stage build for API
+FROM node:20-alpine AS base
+WORKDIR /app
+
+# Install dependencies only when needed
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
+COPY package.json package-lock.json ./
+COPY apps/api/package.json ./apps/api/
+COPY packages/config/package.json ./config/
+RUN npm ci --only=production
+
+# Build the application
+FROM base AS builder
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json ./
+COPY apps/api/package.json ./apps/api/
+COPY packages/config/package.json ./config/
+COPY packages/ui/package.json ./ui/
+
+# Install dependencies with correct platform binaries
+RUN npm ci
+
+# Copy source code (node_modules excluded by .dockerignore)
+COPY . .
+
+# Generate Prisma client
+RUN cd apps/api && npm run db:generate
+
+# Build the API using TypeScript (avoiding esbuild platform issues)
+RUN cd apps/api && npm run build:docker
+
+# Development image with all dependencies
+FROM base AS development
+WORKDIR /app
+
+ENV NODE_ENV=development
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 fastify
+
+# Copy all dependencies from builder (includes devDependencies)
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
+
+# Copy package.json files
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/apps/api/package.json ./apps/api/
+
+# Copy source code and schema for development
+COPY --from=builder /app/apps/api/src ./apps/api/src
+COPY --from=builder /app/apps/api/src/db/schema.prisma ./prisma/schema.prisma
+
+# Copy workspace packages source
+COPY --from=builder /app/packages ./packages
+
+# Create logs directory
+RUN mkdir -p logs && chown -R fastify:nodejs logs
+
+USER fastify
+
+EXPOSE 2022
+
+ENV PORT=2022
+
+# Start the development server
+CMD ["sh", "-c", "cd apps/api && npm run dev"]
+
+# Production image
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 fastify
+
+# Copy built application
+COPY --from=builder /app/apps/api/dist ./dist
+COPY --from=builder /app/apps/api/src/db/schema.prisma ./prisma/schema.prisma
+
+# Copy workspace packages (compiled JavaScript files)
+COPY --from=builder /app/config/package.json ./config/package.json
+
+# Copy node_modules from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
+
+# Copy package.json files
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/apps/api/package.json ./apps/api/
+
+# Create logs directory
+RUN mkdir -p logs && chown -R fastify:nodejs logs
+
+USER fastify
+
+EXPOSE 2022
+
+ENV PORT=2022
+
+# Start the API server
+CMD ["node", "dist/server.js"] 

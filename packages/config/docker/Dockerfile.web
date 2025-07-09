@@ -1,0 +1,90 @@
+# Multi-stage build for Next.js Web App
+FROM node:20-alpine AS base
+WORKDIR /app
+
+# Install dependencies only when needed
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
+COPY package.json package-lock.json ./
+COPY apps/web/package.json ./apps/web/
+COPY packages/config/package.json ./config/
+COPY packages/ui/package.json ./ui/
+RUN npm ci --only=production
+
+# Build the application
+FROM base AS builder
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY apps/web/package.json ./apps/web/
+COPY packages/config/package.json ./config/
+COPY packages/ui/package.json ./ui/
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Build UI components first
+RUN cd packages/ui && npm run build
+
+# Build the Next.js app
+RUN cd apps/web && npm run build
+
+# Development image with all dependencies  
+FROM base AS development
+WORKDIR /app
+
+ENV NODE_ENV=development
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy all dependencies from builder (includes devDependencies)
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/web/node_modules ./apps/web/node_modules
+COPY --from=builder /app/packages/ui/node_modules ./packages/ui/node_modules
+
+# Copy package.json files
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/apps/web/package.json ./apps/web/
+COPY --from=builder /app/packages/config/package.json ./packages/config/
+COPY --from=builder /app/packages/ui/package.json ./packages/ui/
+
+# Copy source code for development
+COPY --from=builder /app/apps/web ./apps/web
+COPY --from=builder /app/packages ./packages
+
+RUN chown -R nextjs:nodejs .
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# Start the development server
+CMD ["sh", "-c", "cd apps/web && npm run dev"]
+
+# Production image
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy built application
+COPY --from=builder /app/apps/web/.next/standalone ./
+COPY --from=builder /app/apps/web/.next/static ./.next/static
+COPY --from=builder /app/apps/web/public ./public
+
+RUN chown -R nextjs:nodejs .
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# Start the Next.js server
+CMD ["node", "server.js"] 

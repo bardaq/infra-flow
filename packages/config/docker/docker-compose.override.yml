@@ -1,0 +1,50 @@
+# Docker Compose override for development
+# This file is automatically loaded by docker-compose and provides development overrides
+
+services:
+  postgres:
+    environment:
+      POSTGRES_DB: infra_flow_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+
+  minio:
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  api:
+    build:
+      context: ../../../
+      dockerfile: packages/config/docker/Dockerfile.api
+      target: development
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/infra_flow_dev
+    volumes:
+      - ../../../apps/api/src:/app/apps/api/src:ro
+      - ../logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ../../../
+      dockerfile: packages/config/docker/Dockerfile.web
+      target: development
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:2022
+      NEXT_PUBLIC_TRPC_URL: http://localhost:2022/trpc
+    volumes:
+      - ../../../apps/web:/app/apps/web:ro
+      - ../../../packages/ui/src:/app/packages/ui/src:ro
+    depends_on:
+      - api
+

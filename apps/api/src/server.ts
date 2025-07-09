@@ -1,7 +1,7 @@
 import fastify from "fastify";
 import ws from "@fastify/websocket";
 import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify";
-import { serverConfig } from "@workspace/config/api.config";
+import { serverConfig } from "./api.config";
 import { rootRouter } from "./rootRouter";
 import { createContext } from "./context";
 

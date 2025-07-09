@@ -4,6 +4,8 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "build": "tsc --build",
+    "build:ts": "tsc --build",
     "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
