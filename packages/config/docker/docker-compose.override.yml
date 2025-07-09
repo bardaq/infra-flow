@@ -26,6 +26,7 @@ services:
     environment:
       NODE_ENV: development
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/infra_flow_dev
+      HOST: 0.0.0.0
     volumes:
       - ../../../apps/api/src:/app/apps/api/src:ro
       - ../logs:/app/logs
