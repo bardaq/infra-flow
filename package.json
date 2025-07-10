@@ -9,17 +9,15 @@
     "packages/*"
   ],
   "scripts": {
-    "web:dev": "npm run dev --workspace=web",
-    "api:dev": "npm run dev --workspace=api",
+    "local:web:dev": "npm run dev --workspace=web",
+    "local:api:dev": "npm run dev --workspace=api",
     "dcr": "./scripts/docker-compose.sh",
+    "start": "./scripts/docker-compose.sh prod",
     "dev": "./scripts/docker-compose.sh dev",
-    "logs": "./scripts/docker-compose.sh logs",
-    "logs:api": "./scripts/docker-compose.sh logs api",
-    "logs:db": "./scripts/docker-compose.sh logs postgres",
-    "logs:s3": "./scripts/docker-compose.sh logs minio",
-    "logs:web": "./scripts/docker-compose.sh logs web",
     "clean:repo": "./scripts/clean.sh",
-    "clean:docker": "./scripts/docker-compose.sh clean"
+    "clean:docker": "./scripts/docker-compose.sh clean",
+    "db:init": "./scripts/init-db.sh",
+    "db:studio": "cd apps/api && npm run db:studio"
   },
   "devDependencies": {
     "@workspace/config": "*",

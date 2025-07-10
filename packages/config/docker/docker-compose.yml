@@ -74,6 +74,12 @@ services:
     volumes:
       - ../logs:/app/logs
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2022/trpc/test.version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   # Next.js Web Application
   web:
@@ -89,7 +95,8 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     networks:
       - infra-flow-network
     restart: unless-stopped
