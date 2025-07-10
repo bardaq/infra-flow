@@ -15,10 +15,7 @@
     "start": "./scripts/docker-compose.sh prod",
     "dev": "./scripts/docker-compose.sh dev",
     "clean:repo": "./scripts/clean.sh",
-    "clean:docker": "./scripts/docker-compose.sh clean",
-    "setup:env": "./scripts/setup-env.sh",
-    "db:init": "./scripts/init-db.sh",
-    "db:studio": "cd apps/api && npm run db:studio"
+    "clean:docker": "./scripts/docker-compose.sh clean"
   },
   "devDependencies": {
     "@workspace/config": "*",

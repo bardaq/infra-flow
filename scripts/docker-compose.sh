@@ -58,22 +58,22 @@ show_help() {
     echo "Usage: $0 [command]"
     echo ""
     echo "Commands:"
-    echo "  up          Start all services"
+    echo "  up          Start all services (uses NODE_ENV from .env)"
     echo "  down        Stop all services"
     echo "  restart     Restart all services"
-    echo "  build       Build all images"
-    echo "  rebuild     Rebuild all images without cache"
+    echo "  build [dev|prod]  Build all images (optionally for dev/prod)"
+    echo "  rebuild [dev|prod]  Rebuild all images without cache (optionally for dev/prod)"
     echo "  logs        Show logs for all services"
     echo "  logs [svc]  Show logs for specific service"
     echo "  ps          Show running containers"
     echo "  shell [svc] Open shell in service container"
     echo "  clean       Remove all containers, networks, and volumes"
-    echo "  dev         Start in development mode"
-    echo "  prod        Start in production mode"
+    echo "  dev         Start in development mode (NODE_ENV=development)"
+    echo "  prod        Start in production mode (NODE_ENV=production)"
     echo "  setup       Setup environment file"
     echo "  help        Show this help message"
     echo ""
-    echo "Services: postgres, minio, api, web"
+    echo "Services: postgres, minio, api, web, prisma-studio"
 }
 
 # Main commands
@@ -82,38 +82,74 @@ case "${1:-help}" in
         check_docker
         setup_env
         log_info "Starting all services..."
-        docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d
-        log_success "All services started successfully!"
-        log_info "Web app: http://localhost:3000"
-        log_info "API: http://localhost:2022"
-        log_info "MinIO Console: http://localhost:9001"
+        # Use override file if available (includes prisma-studio)
+        if [ -f "packages/config/docker/docker-compose.override.yml" ]; then
+            docker-compose -f "$COMPOSE_FILE" -f "packages/config/docker/docker-compose.override.yml" --env-file "$ENV_FILE" up -d
+            log_success "All services started successfully!"
+            log_info "Web app: http://localhost:3000"
+            log_info "API: http://localhost:2022"
+            log_info "MinIO Console: http://localhost:9001"
+            log_info "Prisma Studio: http://localhost:5555"
+        else
+            docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d
+            log_success "All services started successfully!"
+            log_info "Web app: http://localhost:3000"
+            log_info "API: http://localhost:2022"
+            log_info "MinIO Console: http://localhost:9001"
+        fi
         ;;
     
     "down")
         check_docker
         log_info "Stopping all services..."
-        docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" down
+        # Try to stop with override file first (includes prisma-studio)
+        if [ -f "packages/config/docker/docker-compose.override.yml" ]; then
+            docker-compose -f "$COMPOSE_FILE" -f "packages/config/docker/docker-compose.override.yml" --env-file "$ENV_FILE" down --remove-orphans
+        else
+            docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" down --remove-orphans
+        fi
         log_success "All services stopped successfully!"
         ;;
     
     "restart")
         check_docker
         log_info "Restarting all services..."
-        docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" restart
+        # Restart with override file if it exists (includes prisma-studio)
+        if [ -f "packages/config/docker/docker-compose.override.yml" ]; then
+            docker-compose -f "$COMPOSE_FILE" -f "packages/config/docker/docker-compose.override.yml" --env-file "$ENV_FILE" restart
+        else
+            docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" restart
+        fi
         log_success "All services restarted successfully!"
         ;;
     
     "build")
         check_docker
         log_info "Building all images..."
-        docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" build
+        if [ -n "$2" ] && [ "$2" = "dev" ]; then
+            log_info "Building for development environment..."
+            NODE_ENV=development docker-compose -f "$COMPOSE_FILE" -f "packages/config/docker/docker-compose.override.yml" --env-file "$ENV_FILE" build
+        elif [ -n "$2" ] && [ "$2" = "prod" ]; then
+            log_info "Building for production environment..."
+            NODE_ENV=production docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" build
+        else
+            docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" build
+        fi
         log_success "All images built successfully!"
         ;;
     
     "rebuild")
         check_docker
         log_info "Rebuilding all images without cache..."
-        docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" build --no-cache
+        if [ -n "$2" ] && [ "$2" = "dev" ]; then
+            log_info "Rebuilding for development environment..."
+            NODE_ENV=development docker-compose -f "$COMPOSE_FILE" -f "packages/config/docker/docker-compose.override.yml" --env-file "$ENV_FILE" build --no-cache
+        elif [ -n "$2" ] && [ "$2" = "prod" ]; then
+            log_info "Rebuilding for production environment..."
+            NODE_ENV=production docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" build --no-cache
+        else
+            docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" build --no-cache
+        fi
         log_success "All images rebuilt successfully!"
         ;;
     
@@ -121,24 +157,44 @@ case "${1:-help}" in
         check_docker
         if [ -n "$2" ]; then
             log_info "Showing logs for service: $2"
-            docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" logs -f "$2"
+            # Try with override file first (includes prisma-studio)
+            if [ -f "packages/config/docker/docker-compose.override.yml" ]; then
+                docker-compose -f "$COMPOSE_FILE" -f "packages/config/docker/docker-compose.override.yml" --env-file "$ENV_FILE" logs -f "$2"
+            else
+                docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" logs -f "$2"
+            fi
         else
             log_info "Showing logs for all services..."
-            docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" logs -f
+            # Try with override file first (includes prisma-studio)
+            if [ -f "packages/config/docker/docker-compose.override.yml" ]; then
+                docker-compose -f "$COMPOSE_FILE" -f "packages/config/docker/docker-compose.override.yml" --env-file "$ENV_FILE" logs -f
+            else
+                docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" logs -f
+            fi
         fi
         ;;
     
     "ps")
         check_docker
         log_info "Showing running containers..."
-        docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" ps
+        # Show all services including prisma-studio if available
+        if [ -f "packages/config/docker/docker-compose.override.yml" ]; then
+            docker-compose -f "$COMPOSE_FILE" -f "packages/config/docker/docker-compose.override.yml" --env-file "$ENV_FILE" ps
+        else
+            docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" ps
+        fi
         ;;
     
     "shell")
         check_docker
         if [ -n "$2" ]; then
             log_info "Opening shell in service: $2"
-            docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec "$2" /bin/sh
+            # Try with override file first (includes prisma-studio)
+            if [ -f "packages/config/docker/docker-compose.override.yml" ]; then
+                docker-compose -f "$COMPOSE_FILE" -f "packages/config/docker/docker-compose.override.yml" --env-file "$ENV_FILE" exec "$2" /bin/sh
+            else
+                docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec "$2" /bin/sh
+            fi
         else
             log_error "Please specify a service name"
             exit 1
@@ -152,7 +208,12 @@ case "${1:-help}" in
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             log_info "Cleaning up Docker environment..."
-            docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" down -v --rmi all
+            # Clean with override file first (includes prisma-studio)
+            if [ -f "packages/config/docker/docker-compose.override.yml" ]; then
+                docker-compose -f "$COMPOSE_FILE" -f "packages/config/docker/docker-compose.override.yml" --env-file "$ENV_FILE" down -v --rmi all --remove-orphans
+            else
+                docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" down -v --rmi all --remove-orphans
+            fi
             log_success "Docker environment cleaned successfully!"
         else
             log_info "Operation cancelled."
@@ -163,11 +224,12 @@ case "${1:-help}" in
         check_docker
         setup_env
         log_info "Starting in development mode with HMR..."
-        docker-compose -f "$COMPOSE_FILE" -f "packages/config/docker/docker-compose.override.yml" --env-file "$ENV_FILE" up -d
+        NODE_ENV=development docker-compose -f "$COMPOSE_FILE" -f "packages/config/docker/docker-compose.override.yml" --env-file "$ENV_FILE" up -d
         log_success "Development environment started successfully!"
         log_info "Web app: http://localhost:3000 (with HMR)"
         log_info "API: http://localhost:2022 (with HMR)"
         log_info "MinIO Console: http://localhost:9001"
+        log_info "Prisma Studio: http://localhost:5555"
         log_info "HMR is enabled for:"
         log_info "  - Next.js web app changes"
         log_info "  - API server changes"
@@ -178,8 +240,11 @@ case "${1:-help}" in
         check_docker
         setup_env
         log_info "Starting in production mode..."
-        docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d
+        NODE_ENV=production docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d
         log_success "Production environment started successfully!"
+        log_info "Web app: http://localhost:3000"
+        log_info "API: http://localhost:2022"
+        log_info "MinIO Console: http://localhost:9001"
         ;;
     
     "setup")

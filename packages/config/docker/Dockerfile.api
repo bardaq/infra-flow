@@ -7,7 +7,7 @@ FROM base AS deps
 # RUN apk add --no-cache libc6-compat
 COPY package.json package-lock.json ./
 COPY apps/api/package.json ./apps/api/
-COPY packages/config/package.json ./config/
+COPY packages/config/package.json ./packages/config/
 RUN npm ci --only=production
 
 # Build the application
@@ -17,8 +17,8 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json ./
 COPY apps/api/package.json ./apps/api/
-COPY packages/config/package.json ./config/
-COPY packages/ui/package.json ./ui/
+COPY packages/config/package.json ./packages/config/
+COPY packages/ui/package.json ./packages/ui/
 
 # Install dependencies with correct platform binaries
 RUN npm ci
@@ -64,7 +64,7 @@ EXPOSE 2022
 ENV PORT=2022
 ENV HOST=0.0.0.0
 
-# Start the development server (db:setup will be called automatically)
+# Start the development server (db:init will be called automatically)
 CMD ["sh", "-c", "cd apps/api && npm run dev"]
 
 # Production image
