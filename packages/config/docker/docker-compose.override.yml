@@ -46,8 +46,7 @@ services:
       INTERNAL_API_URL: http://api:2022
     volumes:
       - ../../../apps/web:/app/apps/web
-      - ../../../apps/api/scs:/app/apps/api/src
-      - ../../../packages/api/src:/app/packages/ui/src
+      - ../../../apps/api/src:/app/apps/api/src
       - ../../../packages/ui/src:/app/packages/ui/src
     depends_on:
       - api
