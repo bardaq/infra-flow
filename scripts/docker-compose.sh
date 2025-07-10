@@ -162,9 +162,16 @@ case "${1:-help}" in
     "dev")
         check_docker
         setup_env
-        log_info "Starting in development mode..."
+        log_info "Starting in development mode with HMR..."
         docker-compose -f "$COMPOSE_FILE" -f "packages/config/docker/docker-compose.override.yml" --env-file "$ENV_FILE" up -d
         log_success "Development environment started successfully!"
+        log_info "Web app: http://localhost:3000 (with HMR)"
+        log_info "API: http://localhost:2022 (with HMR)"
+        log_info "MinIO Console: http://localhost:9001"
+        log_info "HMR is enabled for:"
+        log_info "  - Next.js web app changes"
+        log_info "  - API server changes"
+        log_info "  - UI package changes"
         ;;
     
     "prod")

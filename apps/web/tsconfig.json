@@ -11,7 +11,9 @@
       {
         "name": "next"
       }
-    ]
+    ],
+    // Ensure proper module resolution for workspace packages
+    "moduleResolution": "bundler"
   },
   "include": [
     "next-env.d.ts",
