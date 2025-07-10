@@ -1,6 +1,7 @@
 {
   "name": "infra-flow",
   "version": "0.0.1",
+  "type": "module",
   "private": true,
   "packageManager": "npm@11.4.2",
   "workspaces": [

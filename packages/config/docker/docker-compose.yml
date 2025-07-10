@@ -21,9 +21,9 @@ services:
           "CMD-SHELL",
           "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-infra_flow}",
         ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
 
   # MinIO File Storage
@@ -80,6 +80,7 @@ services:
     build:
       context: ../../../
       dockerfile: packages/config/docker/Dockerfile.web
+      target: runner
     container_name: infra-flow-web
     environment:
       NODE_ENV: ${NODE_ENV:-production}

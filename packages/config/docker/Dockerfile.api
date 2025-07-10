@@ -1,10 +1,10 @@
 # Multi-stage build for API
-FROM node:20-alpine AS base
+FROM node:20 AS base
 WORKDIR /app
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
+# RUN apk add --no-cache libc6-compat
 COPY package.json package-lock.json ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/config/package.json ./config/
@@ -29,8 +29,8 @@ COPY . .
 # Generate Prisma client
 RUN cd apps/api && npm run db:generate
 
-# Build the API using TypeScript (avoiding esbuild platform issues)
-RUN cd apps/api && npm run build:docker
+# Build the API using esbuild (install for correct Linux architecture)
+RUN cd apps/api && npx --yes esbuild@latest src/server.ts --bundle --packages=external --platform=node --format=esm --outdir=dist --sourcemap
 
 # Development image with all dependencies
 FROM base AS development
@@ -48,15 +48,11 @@ COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/apps/api/package.json ./apps/api/
 
-# Copy source code and schema for development
-COPY --from=builder /app/apps/api/src ./apps/api/src
-COPY --from=builder /app/apps/api/src/db/schema.prisma ./prisma/schema.prisma
-
-# Copy workspace packages source
+# Copy workspace packages source  
 COPY --from=builder /app/packages ./packages
 
-# Create logs directory
-RUN mkdir -p logs && chown -R fastify:nodejs logs
+# Create logs directory and ensure proper permissions
+RUN mkdir -p logs apps/api/src && chown -R fastify:nodejs .
 
 USER fastify
 

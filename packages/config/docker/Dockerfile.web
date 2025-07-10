@@ -2,63 +2,27 @@
 FROM node:20-alpine AS base
 WORKDIR /app
 
-# Install dependencies only when needed
-FROM base AS deps
+# Install dependencies with dev dependencies for development and building
+FROM base AS dev-deps
 RUN apk add --no-cache libc6-compat
 COPY package.json package-lock.json ./
 COPY apps/web/package.json ./apps/web/
 COPY apps/api/package.json ./apps/api/
-COPY packages/config/package.json ./config/
-COPY packages/ui/package.json ./ui/
-RUN npm ci --only=production
-
-# Build the application
-FROM base AS builder
-WORKDIR /app
-COPY package.json package-lock.json ./
-COPY apps/web/package.json ./apps/web/
-COPY apps/api/package.json ./apps/api/
-COPY packages/config/package.json ./config/
-COPY packages/ui/package.json ./ui/
+COPY packages/config/package.json ./packages/config/
+COPY packages/ui/package.json ./packages/ui/
 RUN npm ci
 
 # Copy source code
 COPY . .
 
-# Build UI components first
-RUN cd packages/ui && npm run build
-
-# Build the Next.js app
-RUN cd apps/web && npm run build
-
-# Development image with all dependencies  
-FROM base AS development
+# Development image - NO standalone build for HMR
+FROM dev-deps AS development
 
 ENV NODE_ENV=development
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy all dependencies from builder (includes devDependencies)
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/web/node_modules ./apps/web/node_modules
-COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
-COPY --from=builder /app/packages/ui/node_modules ./packages/ui/node_modules
-
-# Copy package.json files
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/apps/web/package.json ./apps/web/
-COPY --from=builder /app/apps/api/package.json ./apps/api/
-COPY --from=builder /app/packages/config/package.json ./packages/config/
-COPY --from=builder /app/packages/ui/package.json ./packages/ui/
-
-# Copy source code for development
-COPY --from=builder /app/apps/web ./apps/web
-COPY --from=builder /app/apps/api ./apps/api
-COPY --from=builder /app/packages ./packages
-
-# Create symlinks for better monorepo compatibility
-RUN ln -sf /app/node_modules ./apps/web/node_modules_root
-
+# Set ownership
 RUN chown -R nextjs:nodejs .
 
 USER nextjs
@@ -71,8 +35,30 @@ ENV HOSTNAME="0.0.0.0"
 # Set working directory to apps/web for development
 WORKDIR /app/apps/web
 
-# Start the development server from the correct directory
+# Start the development server with HMR
 CMD ["npm", "run", "dev"]
+
+# Production builder - builds standalone
+FROM dev-deps AS builder
+
+# Build the Next.js app for production (Next.js will transpile @workspace/ui)
+RUN cd apps/web && npm run build
+
+# Debug: List the standalone build contents
+RUN echo "=== Standalone build contents ===" && \
+    find apps/web/.next/standalone -type f -name "server.js" 2>/dev/null || true && \
+    ls -la apps/web/.next/standalone/ 2>/dev/null || echo "No standalone directory found" && \
+    ls -la apps/web/.next/standalone/apps/web/ 2>/dev/null || echo "No apps/web directory in standalone"
+
+# Production dependencies (minimal)
+FROM base AS prod-deps
+RUN apk add --no-cache libc6-compat
+COPY package.json package-lock.json ./
+COPY apps/web/package.json ./apps/web/
+COPY apps/api/package.json ./apps/api/
+COPY packages/config/package.json ./packages/config/
+COPY packages/ui/package.json ./packages/ui/
+RUN npm ci --only=production
 
 # Production image
 FROM base AS runner
@@ -82,10 +68,10 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy built application
+# Copy built application - the standalone build maintains monorepo structure
 COPY --from=builder /app/apps/web/.next/standalone ./
-COPY --from=builder /app/apps/web/.next/static ./.next/static
-COPY --from=builder /app/apps/web/public ./public
+COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder /app/apps/web/public ./apps/web/public
 
 RUN chown -R nextjs:nodejs .
 
@@ -96,5 +82,5 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Start the Next.js server
-CMD ["node", "server.js"] 
+# The server.js is located at apps/web/server.js in the standalone output due to outputFileTracingRoot
+CMD ["node", "apps/web/server.js"]

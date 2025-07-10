@@ -1,8 +1,8 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { type NextRequest } from "next/server";
 
-import { rootRouter } from "@infra-flow/api/rootRouter";
-import { createTRPCContext } from "@infra-flow/api/trpc";
+import { rootRouter } from "@workspace/api/rootRouter";
+import { createTRPCContext } from "@workspace/api/trpc";
 
 const handler = (req: NextRequest) =>
   fetchRequestHandler({
@@ -13,3 +13,4 @@ const handler = (req: NextRequest) =>
   });
 
 export { handler as GET, handler as POST };
+

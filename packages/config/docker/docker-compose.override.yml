@@ -28,7 +28,7 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/infra_flow_dev
       HOST: 0.0.0.0
     volumes:
-      - ../../../apps/api/src:/app/apps/api/src:ro
+      - ../../../apps/api/src:/app/apps/api/src
       - ../logs:/app/logs
     depends_on:
       postgres:
@@ -43,9 +43,12 @@ services:
       NODE_ENV: development
       NEXT_PUBLIC_API_URL: http://localhost:2022
       NEXT_PUBLIC_TRPC_URL: http://localhost:2022/trpc
+      INTERNAL_API_URL: http://api:2022
     volumes:
       - ../../../apps/web:/app/apps/web
-      - ../../../packages/ui/src:/app/packages/ui/src:ro
+      - ../../../apps/api/scs:/app/apps/api/src
+      - ../../../packages/api/src:/app/packages/ui/src
+      - ../../../packages/ui/src:/app/packages/ui/src
     depends_on:
       - api
 

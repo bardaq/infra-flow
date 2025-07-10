@@ -5,7 +5,7 @@
     "paths": {
       "@/*": ["./*"],
       "@workspace/ui/*": ["../../packages/ui/src/*"],
-      "@infra-flow/api/*": ["../api/src/*"]
+      "@workspace/api/*": ["../api/src/*"]
     },
     "plugins": [
       {
@@ -15,7 +15,7 @@
   },
   "include": [
     "next-env.d.ts",
-    "next.config.ts",
+    "next.config.mjs",
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts"

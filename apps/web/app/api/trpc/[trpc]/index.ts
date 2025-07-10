@@ -1,8 +1,8 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { type NextRequest } from "next/server";
 
-import { rootRouter } from "@infra-flow/api/rootRouter";
-import { createTRPCContext } from "@infra-flow/api/trpc";
+import { rootRouter } from "@workspace/api/rootRouter";
+import { createTRPCContext } from "@workspace/api/trpc";
 
 /**
  * This wraps the `createTRPCContext` helper and provides the required context for the tRPC API when
