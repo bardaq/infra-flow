@@ -1,7 +1,5 @@
 # Docker Compose Setup for infra-flow
 
-This directory contains all Docker configuration files for the infra-flow project.
-
 ## 🏗️ Architecture
 
 The Docker setup includes four main services:

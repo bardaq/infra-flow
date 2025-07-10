@@ -1,12 +1,17 @@
+# Load environment variables from .env file
+# Place your .env file in packages/config/.env
+# Copy from packages/config/env.example and customize
+# ALL variables must be defined in .env file - no fallbacks provided
+
 services:
   # PostgreSQL Database
   postgres:
     image: postgres:17-alpine
     container_name: infra-flow-postgres
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-infra_flow}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_HOST_AUTH_METHOD: trust
     ports:
       - "5432:5432"
@@ -16,11 +21,7 @@ services:
     networks:
       - infra-flow-network
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-infra_flow}",
-        ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -31,8 +32,8 @@ services:
     image: minio/minio:latest
     container_name: infra-flow-minio
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -55,15 +56,15 @@ services:
       dockerfile: packages/config/docker/Dockerfile.api
     container_name: infra-flow-api
     environment:
-      NODE_ENV: ${NODE_ENV:-production}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-infra_flow}
-      PORT: 2022
+      NODE_ENV: ${NODE_ENV}
+      DATABASE_URL: ${DATABASE_URL}
+      PORT: ${PORT}
       HOST: 0.0.0.0
-      MINIO_ENDPOINT: minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
     ports:
-      - "2022:2022"
+      - "${PORT}:${PORT}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -75,7 +76,7 @@ services:
       - ../logs:/app/logs
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:2022/trpc/test.version"]
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT}/trpc/test.version"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -89,9 +90,9 @@ services:
       target: runner
     container_name: infra-flow-web
     environment:
-      NODE_ENV: ${NODE_ENV:-production}
-      NEXT_PUBLIC_API_URL: http://api:2022
-      NEXT_PUBLIC_TRPC_URL: http://localhost:2022/trpc
+      NODE_ENV: ${NODE_ENV}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_TRPC_URL: ${NEXT_PUBLIC_TRPC_URL}
     ports:
       - "3000:3000"
     depends_on:
