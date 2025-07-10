@@ -1,7 +1,7 @@
 import fastify from "fastify";
 import ws from "@fastify/websocket";
 import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify";
-import { serverConfig } from "@workspace/config/api.config";
+import { serverConfig } from "./api.config";
 import { rootRouter } from "./rootRouter";
 import { createContext } from "./context";
 
@@ -88,18 +88,16 @@ process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 (async () => {
   try {
     const port = serverConfig.port ?? 2022;
-    const host = "localhost";
+    // Use 0.0.0.0 in production/Docker or when HOST env var is set, localhost for local dev
+    const host =
+      process.env.HOST ??
+      (process.env.NODE_ENV === "production" ? "0.0.0.0" : "localhost");
 
     await server.listen({ port, host });
 
     console.log(`🚀 Server is running!`);
-    console.log(`📍 Health check: http://${host}:${port}/health`);
-    console.log(
-      `🔌 tRPC endpoint: http://${host}:${port}${serverConfig.prefix ?? "/trpc"}`
-    );
 
     if (isDevelopment) {
-      console.log(`🐛 Debug info: http://${host}:${port}/debug/info`);
       console.log(`📝 Environment: ${process.env.NODE_ENV || "development"}`);
       console.log(`🔍 Process ID: ${process.pid}`);
     }

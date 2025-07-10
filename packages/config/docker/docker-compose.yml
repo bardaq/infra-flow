@@ -1,0 +1,106 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:17-alpine
+    container_name: infra-flow-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-infra_flow}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../postgres-init:/docker-entrypoint-initdb.d
+    networks:
+      - infra-flow-network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-infra_flow}",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # MinIO File Storage
+  minio:
+    image: minio/minio:latest
+    container_name: infra-flow-minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - infra-flow-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: unless-stopped
+
+  # API Server
+  api:
+    build:
+      context: ../../../
+      dockerfile: packages/config/docker/Dockerfile.api
+    container_name: infra-flow-api
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-infra_flow}
+      PORT: 2022
+      HOST: 0.0.0.0
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+    ports:
+      - "2022:2022"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - infra-flow-network
+    volumes:
+      - ../logs:/app/logs
+    restart: unless-stopped
+
+  # Next.js Web Application
+  web:
+    build:
+      context: ../../../
+      dockerfile: packages/config/docker/Dockerfile.web
+      target: runner
+    container_name: infra-flow-web
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      NEXT_PUBLIC_API_URL: http://api:2022
+      NEXT_PUBLIC_TRPC_URL: http://localhost:2022/trpc
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    networks:
+      - infra-flow-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  minio_data:
+    driver: local
+
+networks:
+  infra-flow-network:
+    driver: bridge
+

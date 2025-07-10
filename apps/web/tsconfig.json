@@ -5,17 +5,19 @@
     "paths": {
       "@/*": ["./*"],
       "@workspace/ui/*": ["../../packages/ui/src/*"],
-      "@infra-flow/api/*": ["../api/src/*"]
+      "@workspace/api/*": ["../api/src/*"]
     },
     "plugins": [
       {
         "name": "next"
       }
-    ]
+    ],
+    // Ensure proper module resolution for workspace packages
+    "moduleResolution": "bundler"
   },
   "include": [
     "next-env.d.ts",
-    "next.config.ts",
+    "next.config.mjs",
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts"

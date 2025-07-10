@@ -7,11 +7,13 @@ import {
   wsLink,
 } from "@trpc/client";
 import superjson from "superjson";
-import { serverConfig } from "@workspace/config/api.config";
+import { serverConfig } from "./api.config";
 
 const { port, prefix } = serverConfig;
 const urlEnd = `localhost:${port}${prefix}`;
 const wsClient = createWSClient({ url: `ws://${urlEnd}` });
+// Ok, but when to close...
+// await wsClient.close();
 
 export const trpc = createTRPCClient<TrpcRouter>({
   links: [
@@ -27,6 +29,3 @@ export const trpc = createTRPCClient<TrpcRouter>({
     }),
   ],
 });
-// But when to close...
-// await wsClient.close();
-

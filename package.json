@@ -1,22 +1,25 @@
 {
   "name": "infra-flow",
   "version": "0.0.1",
+  "type": "module",
   "private": true,
+  "packageManager": "npm@11.4.2",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "build": "turbo build",
-    "build:ts": "turbo build:ts",
-    "clean": "turbo clean",
-    "clean:dist": "turbo clean:dist",
-    "dev": "turbo dev",
-    "lint": "turbo lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "web:dev": "npm run dev --workspace=web",
-    "web:build": "npm run build --workspace=web",
-    "web:build:ts": "npm run build:ts --workspace=web"
+    "api:dev": "npm run dev --workspace=api",
+    "dcr": "./scripts/docker-compose.sh",
+    "dev": "./scripts/docker-compose.sh dev",
+    "logs": "./scripts/docker-compose.sh logs",
+    "logs:api": "./scripts/docker-compose.sh logs api",
+    "logs:db": "./scripts/docker-compose.sh logs postgres",
+    "logs:s3": "./scripts/docker-compose.sh logs minio",
+    "logs:web": "./scripts/docker-compose.sh logs web",
+    "clean:repo": "./scripts/clean.sh",
+    "clean:docker": "./scripts/docker-compose.sh clean"
   },
   "devDependencies": {
     "@workspace/config": "*",

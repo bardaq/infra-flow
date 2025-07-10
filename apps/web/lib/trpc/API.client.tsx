@@ -7,7 +7,7 @@ import { type inferRouterInputs, type inferRouterOutputs } from "@trpc/server";
 import { useState } from "react";
 import SuperJSON from "superjson";
 
-import { type TrpcRouter } from "@infra-flow/api/rootRouter";
+import { type TrpcRouter } from "@workspace/api/rootRouter";
 import { createQueryClient } from "./queryClient";
 
 let clientQueryClientSingleton: QueryClient | undefined = undefined;
@@ -27,6 +27,12 @@ export const API: ReturnType<typeof createTRPCReact<TrpcRouter>> =
 
 export type RouterInputs = inferRouterInputs<TrpcRouter>;
 export type RouterOutputs = inferRouterOutputs<TrpcRouter>;
+
+function getBaseUrl() {
+  if (typeof window !== "undefined") return window.location.origin;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return `http://localhost:${process.env.PORT ?? 3000}`;
+}
 
 export function TRPCReactProvider(props: { children: React.ReactNode }) {
   const queryClient = getQueryClient();
@@ -59,11 +65,5 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
       </API.Provider>
     </QueryClientProvider>
   );
-}
-
-function getBaseUrl() {
-  if (typeof window !== "undefined") return window.location.origin;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return `http://localhost:${process.env.PORT ?? 3000}`;
 }
 

@@ -1,0 +1,63 @@
+# Docker Compose override for development
+# This file is automatically loaded by docker-compose and provides development overrides
+
+services:
+  postgres:
+    environment:
+      POSTGRES_DB: infra_flow_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+
+  minio:
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  api:
+    build:
+      context: ../../../
+      dockerfile: packages/config/docker/Dockerfile.api
+      target: development
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/infra_flow_dev
+      HOST: 0.0.0.0
+    volumes:
+      # Mount API source for HMR
+      - ../../../apps/api/src:/app/apps/api/src
+      # Mount logs
+      - ../logs:/app/logs
+      # Mount workspace packages for shared dependencies
+      - ../../../packages:/app/packages
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ../../../
+      dockerfile: packages/config/docker/Dockerfile.web
+      target: development
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:2022
+      NEXT_PUBLIC_TRPC_URL: http://localhost:2022/trpc
+      INTERNAL_API_URL: http://api:2022
+    volumes:
+      # Mount web app source for HMR
+      - ../../../apps/web:/app/apps/web
+      # Mount API source for shared types and dependencies
+      - ../../../apps/api/src:/app/apps/api/src
+      # Mount workspace packages for HMR (including UI package)
+      - ../../../packages:/app/packages
+      # Exclude node_modules from volume mounting to avoid conflicts
+      - /app/apps/web/node_modules
+      - /app/packages/ui/node_modules
+    depends_on:
+      - api
+

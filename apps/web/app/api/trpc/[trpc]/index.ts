@@ -1,25 +1,18 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { type NextRequest } from "next/server";
 
-import { rootRouter } from "@infra-flow/api/rootRouter";
-import { createTRPCContext } from "@infra-flow/api/trpc";
-
-export interface User {
-  name: string[] | string;
-}
+import { rootRouter } from "@workspace/api/rootRouter";
+import { createTRPCContext } from "@workspace/api/trpc";
 
 /**
  * This wraps the `createTRPCContext` helper and provides the required context for the tRPC API when
  * handling a HTTP request (e.g. when you make requests from Client Components).
  */
 const createContext = async (req: NextRequest) => {
-  const user: User = { name: req.headers.get("username") ?? "anonymous" };
-
   return {
     ...createTRPCContext({
       headers: req.headers,
     }),
-    user,
     req,
   };
 };
