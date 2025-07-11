@@ -9,7 +9,7 @@ import {
   HeadBucketCommand,
   DeleteBucketCommand,
 } from "@aws-sdk/client-s3";
-import S3_CONFIG from "@workspace/config/S3.config";
+import S3_CONFIG from "@workspace/config/S3Config";
 
 export class S3ServiceSingleton {
   private s3Client: S3Client;

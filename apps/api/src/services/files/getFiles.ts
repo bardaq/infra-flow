@@ -1,21 +1,17 @@
 import { db } from "../../db";
-import { S3Service } from "../S3Service";
 
 /**
  * Get all files from database and bucket
  */
 export async function getFiles() {
   try {
-    // Get files from bucket
-    const bucketFiles = await S3Service.listFiles();
-
     // Get files from database
     const dbFiles = await db.file.findMany({
       orderBy: { createdAt: "desc" },
     });
 
     return {
-      files: dbFiles.map((file: any) => ({
+      files: dbFiles.map((file) => ({
         id: file.id,
         name: file.name,
         originalName: file.originalName,
@@ -25,7 +21,6 @@ export async function getFiles() {
         createdAt: file.createdAt,
         updatedAt: file.updatedAt,
       })),
-      bucketFiles: bucketFiles,
       totalCount: dbFiles.length,
     };
   } catch (error) {

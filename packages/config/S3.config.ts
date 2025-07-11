@@ -1,5 +1,11 @@
 const { MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY } = process.env;
 
+console.log({
+  MINIO_ENDPOINT,
+  MINIO_ACCESS_KEY,
+  MINIO_SECRET_KEY,
+});
+
 if (!MINIO_ENDPOINT || !MINIO_ACCESS_KEY || !MINIO_SECRET_KEY) {
   throw new Error("Missing S3 configuration");
 }
@@ -7,10 +13,7 @@ if (!MINIO_ENDPOINT || !MINIO_ACCESS_KEY || !MINIO_SECRET_KEY) {
 const S3_CONFIG = {
   endpoint: MINIO_ENDPOINT,
   accessKeyId: MINIO_ACCESS_KEY,
-  secretAccessKey:
-    process.env.MINIO_SECRET_KEY ||
-    process.env.MINIO_ROOT_PASSWORD ||
-    "minioadmin",
+  secretAccessKey: MINIO_SECRET_KEY,
   region: "us-east-1",
   forcePathStyle: true,
 };
