@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { publicProcedure, router } from "../trpc";
-import { uploadFile } from "../servies/files/uploadFile";
-import { deleteFile } from "src/servies/files/deleteFile";
-import { getFiles } from "src/servies/files/getFiles";
+import { uploadFile } from "../services/files/uploadFile";
+import { deleteFile } from "../services/files/deleteFile";
+import { getFiles } from "../services/files/getFiles";
 
 export const filesRouter = router({
   /**
