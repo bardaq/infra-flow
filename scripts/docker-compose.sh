@@ -67,9 +67,11 @@ show_help() {
     echo "  logs [svc]  Show logs for specific service"
     echo "  ps          Show running containers"
     echo "  shell [svc] Open shell in service container"
+    echo "  migrate [name]  Generate new database migration (dev only)"
+    echo "  migrate:reset   Reset database (WARNING: destructive)"
     echo "  clean       Remove all containers, networks, and volumes"
-    echo "  dev         Start in development mode (NODE_ENV=development)"
-    echo "  prod        Start in production mode (NODE_ENV=production)"
+    echo "  dev         Start in development mode"
+    echo "  prod        Start in production mode"
     echo "  setup       Setup environment file"
     echo "  help        Show this help message"
     echo ""
@@ -201,6 +203,49 @@ case "${1:-help}" in
         fi
         ;;
     
+    "migrate")
+        check_docker
+        # Check if development environment is running
+        if ! docker-compose -f "$COMPOSE_FILE" -f "packages/config/docker/docker-compose.override.yml" --env-file "$ENV_FILE" ps | grep -q "infra-flow-api.*Up"; then
+            log_error "Development environment is not running. Please start it first:"
+            log_info "  $0 dev"
+            exit 1
+        fi
+        
+        if [ -n "$2" ]; then
+            log_info "Generating migration: $2"
+            log_info "This will create migration files and apply them to the database"
+            docker-compose -f "$COMPOSE_FILE" -f "packages/config/docker/docker-compose.override.yml" --env-file "$ENV_FILE" exec api sh -c "cd apps/api && npx prisma migrate dev --schema=src/db/schema.prisma --name $2"
+        else
+            log_info "Generating migration (Prisma will prompt for name)..."
+            log_info "This will create migration files and apply them to the database"
+            docker-compose -f "$COMPOSE_FILE" -f "packages/config/docker/docker-compose.override.yml" --env-file "$ENV_FILE" exec api sh -c "cd apps/api && npx prisma migrate dev --schema=src/db/schema.prisma"
+        fi
+        log_success "Migration generated successfully!"
+        log_info "Migration files are saved to: apps/api/src/db/migrations/"
+        log_info "These files will be applied automatically on next container start"
+        ;;
+        "migrate:reset")
+        check_docker
+        # Check if development environment is running
+        if ! docker-compose -f "$COMPOSE_FILE" -f "packages/config/docker/docker-compose.override.yml" --env-file "$ENV_FILE" ps | grep -q "infra-flow-api.*Up"; then
+            log_error "Development environment is not running. Please start it first:"
+            log_info "  $0 dev"
+            exit 1
+        fi
+        
+        log_warn "This will reset your database and delete all data!"
+        read -p "Are you sure? (y/N) " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            log_info "Resetting database..."
+            docker-compose -f "$COMPOSE_FILE" -f "packages/config/docker/docker-compose.override.yml" --env-file "$ENV_FILE" exec api sh -c "cd apps/api && npx prisma migrate reset --schema=src/db/schema.prisma --force"
+            log_success "Database reset successfully!"
+        else
+            log_info "Operation cancelled."
+        fi
+        ;;
+    
     "clean")
         check_docker
         log_warn "This will remove all containers, networks, and volumes!"
@@ -224,6 +269,7 @@ case "${1:-help}" in
         check_docker
         setup_env
         log_info "Starting in development mode with HMR..."
+        log_info "Database setup: Auto-detects if initial migration needed or deploys existing"
         NODE_ENV=development docker-compose -f "$COMPOSE_FILE" -f "packages/config/docker/docker-compose.override.yml" --env-file "$ENV_FILE" up -d
         log_success "Development environment started successfully!"
         log_info "Web app: http://localhost:3000 (with HMR)"
@@ -234,12 +280,16 @@ case "${1:-help}" in
         log_info "  - Next.js web app changes"
         log_info "  - API server changes"
         log_info "  - UI package changes"
+        log_info "Migration workflow:"
+        log_info "  - Use '$0 migrate [name]' to generate new migrations"
+        log_info "  - Migrations auto-apply on container restart"
         ;;
     
     "prod")
         check_docker
         setup_env
         log_info "Starting in production mode..."
+        log_info "Database setup: Applies existing migrations (never creates new ones)"
         NODE_ENV=production docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d
         log_success "Production environment started successfully!"
         log_info "Web app: http://localhost:3000"
