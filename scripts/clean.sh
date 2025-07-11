@@ -67,6 +67,13 @@ count_items() {
     # Count .js files in TypeScript src directories (generated files)
     count=$((count + $(find packages/ui/src -name "*.js" -type f 2>/dev/null | wc -l)))
     
+    # Count Docker resources if Docker is available
+    if command -v docker &> /dev/null; then
+        local docker_containers=$(docker ps -a --filter "name=infra-flow" --format "{{.Names}}" 2>/dev/null | wc -l)
+        local docker_volumes=$(docker volume ls --filter "name=infra-flow" --format "{{.Name}}" 2>/dev/null | wc -l)
+        count=$((count + docker_containers + docker_volumes))
+    fi
+    
     echo $count
 }
 
@@ -239,10 +246,109 @@ clean_logs() {
         done < <(find . -name "$pattern" -type f -print0 2>/dev/null)
     done
     
+    # Clean logs directory
+    if [ -d "packages/config/logs" ]; then
+        log_info "Cleaning logs directory..."
+        rm -rf packages/config/logs/*
+        count=$((count + 1))
+    fi
+    
     if [ $count -gt 0 ]; then
-        log_success "Removed $count log files"
+        log_success "Removed $count log files and directories"
     else
         log_info "No log files found"
+    fi
+}
+
+# Clean Docker containers and volumes
+clean_docker() {
+    log_info "Cleaning Docker containers and volumes..."
+    
+    local count=0
+    
+    # Check if Docker is available
+    if ! command -v docker &> /dev/null; then
+        log_warn "Docker not found, skipping Docker cleanup"
+        return
+    fi
+    
+    # Stop and remove infra-flow containers
+    local containers=$(docker ps -a --filter "name=infra-flow" --format "{{.Names}}" 2>/dev/null)
+    if [ -n "$containers" ]; then
+        log_info "Stopping infra-flow containers..."
+        echo "$containers" | while read -r container; do
+            log_info "Stopping container: $container"
+            docker stop "$container" 2>/dev/null || true
+            docker rm "$container" 2>/dev/null || true
+            count=$((count + 1))
+        done
+    fi
+    
+    # Remove infra-flow volumes
+    local volumes=$(docker volume ls --filter "name=infra-flow" --format "{{.Name}}" 2>/dev/null)
+    if [ -n "$volumes" ]; then
+        log_info "Removing infra-flow volumes..."
+        echo "$volumes" | while read -r volume; do
+            log_info "Removing volume: $volume"
+            docker volume rm "$volume" 2>/dev/null || true
+            count=$((count + 1))
+        done
+    fi
+    
+    # Remove infra-flow network if it exists
+    if docker network ls --filter "name=infra-flow-network" --format "{{.Name}}" | grep -q "infra-flow-network"; then
+        log_info "Removing infra-flow network..."
+        docker network rm infra-flow-network 2>/dev/null || true
+        count=$((count + 1))
+    fi
+    
+    # Clean up dangling images
+    local dangling=$(docker images -f "dangling=true" -q 2>/dev/null)
+    if [ -n "$dangling" ]; then
+        log_info "Removing dangling Docker images..."
+        docker rmi $dangling 2>/dev/null || true
+        count=$((count + 1))
+    fi
+    
+    if [ $count -gt 0 ]; then
+        log_success "Cleaned $count Docker resources"
+    else
+        log_info "No Docker resources found to clean"
+    fi
+}
+
+# Clean Docker Compose services
+clean_docker_compose() {
+    log_info "Cleaning Docker Compose services..."
+    
+    # Check if docker-compose is available
+    if ! command -v docker-compose &> /dev/null; then
+        log_warn "docker-compose not found, skipping Docker Compose cleanup"
+        return
+    fi
+    
+    # Navigate to docker config directory
+    local docker_dir="packages/config/docker"
+    if [ -d "$docker_dir" ]; then
+        log_info "Stopping Docker Compose services..."
+        cd "$docker_dir"
+        
+        # Stop and remove services
+        docker-compose -f docker-compose.yml -f docker-compose.override.yml down --volumes --remove-orphans 2>/dev/null || true
+        
+        # Remove specific service containers if they exist
+        for service in "infra-flow-postgres" "infra-flow-minio" "infra-flow-api" "infra-flow-web" "infra-flow-prisma-studio"; do
+            if docker ps -a --filter "name=$service" --format "{{.Names}}" | grep -q "$service"; then
+                log_info "Removing container: $service"
+                docker rm -f "$service" 2>/dev/null || true
+            fi
+        done
+        
+        # Return to project root
+        cd - > /dev/null
+        log_success "Docker Compose services cleaned"
+    else
+        log_warn "Docker directory not found at $docker_dir"
     fi
 }
 
@@ -258,12 +364,19 @@ show_preview() {
     echo "    • .next/"
     echo "    • .turbo/"
     echo "    • coverage/"
+    echo "    • packages/config/logs/"
     echo ""
     echo "  📄 Files:"
     echo "    • *.tsbuildinfo"
     echo "    • Generated .d.ts, .d.ts.map, .js.map files in src/"
     echo "    • Generated .js files in TypeScript packages"
     echo "    • Log files (*.log, npm-debug.log*, etc.)"
+    echo ""
+    echo "  🐳 Docker Resources:"
+    echo "    • infra-flow containers (postgres, minio, api, web, prisma-studio)"
+    echo "    • infra-flow volumes"
+    echo "    • infra-flow network"
+    echo "    • Dangling Docker images"
     echo ""
     
     local total_items=$(count_items)
@@ -292,6 +405,8 @@ main() {
     log_info "Starting cleanup..."
     echo ""
     
+    clean_docker_compose
+    clean_docker
     clean_node_modules
     clean_dist
     clean_nextjs
@@ -326,6 +441,9 @@ show_help() {
     echo "  • TypeScript build info files"
     echo "  • Generated TypeScript files"
     echo "  • Log files"
+    echo "  • Docker containers and volumes (infra-flow services)"
+    echo "  • Docker networks (infra-flow-network)"
+    echo "  • Dangling Docker images"
 }
 
 # Parse command line arguments
@@ -343,6 +461,8 @@ case "${1:-}" in
         check_root_directory
         log_info "Force cleaning (no confirmation)..."
         echo ""
+        clean_docker_compose
+        clean_docker
         clean_node_modules
         clean_dist
         clean_nextjs

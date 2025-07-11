@@ -1,19 +1,21 @@
 # Docker Compose override for development
 # This file is automatically loaded by docker-compose and provides development overrides
+# Ensure you have packages/config/.env file with your environment variables
+# ALL variables must be defined in .env file - no fallbacks provided
 
 services:
   postgres:
     environment:
-      POSTGRES_DB: infra_flow_dev
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
 
   minio:
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin123
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -25,8 +27,12 @@ services:
       target: development
     environment:
       NODE_ENV: development
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/infra_flow_dev
+      DATABASE_URL: ${DATABASE_URL}
       HOST: 0.0.0.0
+      PORT: ${PORT}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
     volumes:
       # Mount API source for HMR
       - ../../../apps/api/src:/app/apps/api/src
@@ -37,6 +43,13 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT}/trpc/test.version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   web:
     build:
@@ -45,9 +58,9 @@ services:
       target: development
     environment:
       NODE_ENV: development
-      NEXT_PUBLIC_API_URL: http://localhost:2022
-      NEXT_PUBLIC_TRPC_URL: http://localhost:2022/trpc
-      INTERNAL_API_URL: http://api:2022
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_TRPC_URL: ${NEXT_PUBLIC_TRPC_URL}
+      INTERNAL_API_URL: http://api:${PORT}
     volumes:
       # Mount web app source for HMR
       - ../../../apps/web:/app/apps/web
@@ -59,5 +72,33 @@ services:
       - /app/apps/web/node_modules
       - /app/packages/ui/node_modules
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+
+  # Prisma Studio service for database management
+  prisma-studio:
+    image: node:lts-alpine
+    container_name: infra-flow-prisma-studio
+    working_dir: /usr/src/app
+    volumes:
+      - ../../../:/usr/src/app
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      NODE_ENV: development
+    ports:
+      - "5555:5555"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
+    networks:
+      - infra-flow-network
+    command:
+      [
+        "sh",
+        "-c",
+        "cd apps/api && npx prisma studio --schema=src/db/schema.prisma --port 5555 --hostname 0.0.0.0 --browser none",
+      ]
+    restart: unless-stopped
 
