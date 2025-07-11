@@ -5,11 +5,15 @@
     "outDir": "dist",
     "noEmit": false,
     "paths": {
-      "@workspace/config/*": ["../../packages/config/*"],
-      "@workspace/ui/*": ["../../packages/ui/src/*"]
+      "@/*": ["./*"],
+      "@workspace/config/*": ["../config/*"]
     }
   },
-  "include": ["src"],
+  "include": [
+    "src",
+    "../../packages/config/api.config.ts",
+    "../../packages/config/S3.config.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }
 

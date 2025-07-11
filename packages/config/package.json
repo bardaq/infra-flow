@@ -11,7 +11,8 @@
     "./typescript/nextjs.json": "./typescript/tsconfig.nextjs.json",
     "./typescript/react-library.json": "./typescript/react-library.json",
     "./typescript/node.json": "./typescript/tsconfig.node.json",
-    "./api.config": "./api.config.js"
+    "./api.config": "./api.config.ts",
+    "./S3.config": "./S3.config.ts"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "^15.1.7",

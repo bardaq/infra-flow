@@ -88,11 +88,22 @@ services:
       context: ../../../
       dockerfile: packages/config/docker/Dockerfile.web
       target: runner
+      args:
+        DATABASE_URL: ${DATABASE_URL}
+        MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+        MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+        MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_TRPC_URL: ${NEXT_PUBLIC_TRPC_URL}
     container_name: infra-flow-web
     environment:
       NODE_ENV: ${NODE_ENV}
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
       NEXT_PUBLIC_TRPC_URL: ${NEXT_PUBLIC_TRPC_URL}
+      DATABASE_URL: ${DATABASE_URL}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
     ports:
       - "3000:3000"
     depends_on:

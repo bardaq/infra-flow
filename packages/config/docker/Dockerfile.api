@@ -30,7 +30,7 @@ COPY . .
 RUN cd apps/api && npm run db:generate
 
 # Build the API using esbuild (install for correct Linux architecture)
-RUN cd apps/api && npx --yes esbuild@latest src/server.ts --bundle --packages=external --platform=node --format=esm --outdir=dist --sourcemap
+RUN cd apps/api && npx --yes esbuild@latest src/server.ts --bundle --platform=node --format=esm --outdir=dist --sourcemap --external:@prisma/client --external:fastify --external:@fastify/websocket --external:@trpc/server --external:@aws-sdk/client-s3 --external:@aws-sdk/lib-storage --external:ws --external:pino-pretty
 
 # Development image with all dependencies
 FROM base AS development
@@ -89,6 +89,9 @@ COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 # Copy package.json files
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/apps/api/package.json ./apps/api/
+
+# Copy workspace packages source files needed at runtime
+COPY --from=builder /app/packages/config ./packages/config
 
 # Create logs directory and prisma directory
 RUN mkdir -p logs apps/api/src/db && chown -R fastify:nodejs .

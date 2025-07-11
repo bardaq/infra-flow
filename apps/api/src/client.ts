@@ -7,7 +7,7 @@ import {
   wsLink,
 } from "@trpc/client";
 import superjson from "superjson";
-import { serverConfig } from "./api.config";
+import { serverConfig } from "@workspace/config/api.config";
 
 const { port, prefix } = serverConfig;
 const urlEnd = `localhost:${port}${prefix}`;
@@ -29,3 +29,4 @@ export const trpc = createTRPCClient<TrpcRouter>({
     }),
   ],
 });
+
