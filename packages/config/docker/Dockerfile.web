@@ -18,6 +18,22 @@ COPY . .
 # Development image - NO standalone build for HMR
 FROM dev-deps AS development
 
+# Add build arguments for environment variables needed during build
+ARG DATABASE_URL
+ARG MINIO_ENDPOINT
+ARG MINIO_ACCESS_KEY
+ARG MINIO_SECRET_KEY
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_TRPC_URL
+
+# Set environment variables from build arguments
+ENV DATABASE_URL=$DATABASE_URL
+ENV MINIO_ENDPOINT=$MINIO_ENDPOINT
+ENV MINIO_ACCESS_KEY=$MINIO_ACCESS_KEY
+ENV MINIO_SECRET_KEY=$MINIO_SECRET_KEY
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_TRPC_URL=$NEXT_PUBLIC_TRPC_URL
+
 ENV NODE_ENV=development
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -40,6 +56,22 @@ CMD ["npm", "run", "dev"]
 
 # Production builder - builds standalone
 FROM dev-deps AS builder
+
+# Add build arguments for environment variables needed during build
+ARG DATABASE_URL
+ARG MINIO_ENDPOINT
+ARG MINIO_ACCESS_KEY
+ARG MINIO_SECRET_KEY
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_TRPC_URL
+
+# Set environment variables from build arguments
+ENV DATABASE_URL=$DATABASE_URL
+ENV MINIO_ENDPOINT=$MINIO_ENDPOINT
+ENV MINIO_ACCESS_KEY=$MINIO_ACCESS_KEY
+ENV MINIO_SECRET_KEY=$MINIO_SECRET_KEY
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_TRPC_URL=$NEXT_PUBLIC_TRPC_URL
 
 # Build the Next.js app for production (Next.js will transpile @workspace/ui)
 RUN cd apps/web && npm run build

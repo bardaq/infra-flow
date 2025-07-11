@@ -56,11 +56,22 @@ services:
       context: ../../../
       dockerfile: packages/config/docker/Dockerfile.web
       target: development
+      args:
+        DATABASE_URL: ${DATABASE_URL}
+        MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+        MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+        MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_TRPC_URL: ${NEXT_PUBLIC_TRPC_URL}
     environment:
       NODE_ENV: development
+      DATABASE_URL: ${DATABASE_URL}
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
       NEXT_PUBLIC_TRPC_URL: ${NEXT_PUBLIC_TRPC_URL}
       INTERNAL_API_URL: http://api:${PORT}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
     volumes:
       # Mount web app source for HMR
       - ../../../apps/web:/app/apps/web
